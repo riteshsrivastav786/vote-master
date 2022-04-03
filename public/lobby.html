@@ -1,0 +1,139 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <title>Vote Master</title>
+    <link href="bootstrap/css/bootstrap.min.css" rel="stylesheet" />
+</head>
+
+<body>
+    <div class="container">
+        <p id="username"></p>
+        <br></br>
+        <p id="countdown"></p>
+        <div class="row align-items-center">
+            <div class="col-lg-6">
+                CONDIDATE NAME
+                <ul id="tableList" class="list-group">
+
+                </ul>
+            </div>
+
+            <div class="col"></div>
+        </div>
+    </div>
+
+    <script src="js/jquery.js"></script>
+    <script src="js/socket.io.min.js"></script>
+    <script src="bootstrap/js/bootstrap.min.js"></script>
+    <script>
+        function getCookieValue(cname) {
+            var name = cname + "=";
+            var decodedCookie = decodeURIComponent(document.cookie);
+            var ca = decodedCookie.split(';');
+            for (var i = 0; i < ca.length; i++) {
+                var c = ca[i];
+                while (c.charAt(0) == ' ') {
+                    c = c.substring(1);
+                }
+                if (c.indexOf(name) == 0) {
+                    return c.substring(name.length, c.length);
+                }
+            }
+            return "";
+        }
+        let token = getCookieValue("token");
+        if (token == '') {
+            location.assign('/')
+        }
+        var socket = io('/lobby', { transports: ["websocket"] });
+        socket.on("connect", () => {
+            console.log('connected to lobby server')
+            getCondidates();
+            getProfile();
+        });
+        function getProfile() {
+            let msg = {
+                type: 'getProfile',
+                data: {
+                    token: token,
+                }
+            }
+            socket.emit('request', msg, (res) => {
+                console.log(res);
+                if (res.type == 'error') {
+                    alert(res.error);
+                    return;
+                }
+                $('#username').html(res.data.username);
+            })
+        }
+
+        function getCondidates() {
+            let msg = {
+                type: 'getCondidates',
+                data: {
+                    token: token
+                }
+            }
+            socket.emit('request', msg, (res) => {
+                console.log(res);
+                if (res.type == 'error') {
+                    alert(res.error);
+                    return;
+                }
+                processTables(res.data)
+            })
+        }
+
+        function joinVote(ns) {
+            let msg = {
+                type: 'giveVote',
+                data: {
+                    token: token,
+                    ns
+                }
+            }
+            socket.emit('request', msg, (res) => {
+                if (res.type == 'error') {
+                    alert(res.error);
+                    return;
+                }
+                $('.vote').attr('disabled', true);
+            });
+        }
+        socket.on("request", (res) => {
+            switch (res.type) {
+                case 'tableUpdate':
+                    updateTable(res.data)
+                    return;
+                case 'tablerefresh':
+                    getCondidates()
+                    return;
+            }
+        });
+        function updateTable(table) {
+            $('#' + table.ns).html(`${table.name} <button class="btn btn-primary float-end" onclick="joinVote('${table.ns}')" disabled="disabled">VOTE</button>`);
+        }
+        function processTables(data) {
+            let html = data.public.map(table => {
+                return `<li id="${table.ns}" class="list-group-item">${table.name} <button class="btn btn-primary vote float-end" onclick="joinVote('${table.ns}')">VOTE</button></li>`;
+            }).reduce((old, cu) => old + cu, '');
+            $('#tableList').html(html);
+        }
+        var timeleft = 10;
+        var downloadTimer = setInterval(function () {
+            if (timeleft <= 0) {
+                clearInterval(downloadTimer);
+                document.getElementById("countdown").innerHTML = "Finished";
+                $('.vote').attr('disabled', true);
+            } else {
+                document.getElementById("countdown").innerHTML = timeleft + " seconds remaining";
+            }
+            timeleft -= 1;
+        }, 1000);
+
+    </script>
+</body>
+
+</html>

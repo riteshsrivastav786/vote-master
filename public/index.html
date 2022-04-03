@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <title>Voting Master</title>
+    <link href="bootstrap/css/bootstrap.min.css" rel="stylesheet" />
+</head>
+
+<body>
+    <div class="container">
+        <div class="row align-items-center">
+            <div class="col"></div>
+            <div class="col-lg-4">
+                <div class="mb-3">
+                    <label for="username" class="form-label"><b>Username</b></label>
+                    <input type="text" class="form-control" id="username" value="voter1">
+                </div>
+                <br</br>
+                <button type="button" class="btn btn-primary" onclick="getVoterList()">Login</button>
+                <br</br>
+                <div class="mb-3">
+                    <br</br>
+                    <label for="username" class="form-label"><b>Username</b></label>
+                    <input type="text" class="form-control" id="adminusername" value="admin">
+                </div>
+                <div class="mb-3">
+                    <br</br>
+                    <button type="button" class="btn btn-primary" onclick="getCondidateList()">Admin Login</button>
+                </div>
+            </div>
+            <div class="col"></div>
+        </div>
+    </div>
+    <script src="js/jquery.js"></script>
+    <script src="bootstrap/js/bootstrap.min.js"></script>
+    <script>
+        function getVoterList() {
+            let username = $('#username').val();
+            $.ajax({
+                type: "POST",
+                url: "/user/join",
+                data: JSON.stringify({ username }),
+                success: function (data) {
+                    location.assign('/lobby.html')
+                },
+                contentType: "application/json",
+                dataType: 'json'
+            });
+        }
+
+        function getCondidateList() {
+            let username = $('#adminusername').val();
+            $.ajax({
+                type: "POST",
+                url: "/user/join",
+                data: JSON.stringify({ username }),
+                success: function (data) {
+                    location.assign('/admin.html')
+                },
+                contentType: "application/json",
+                dataType: 'json'
+            });
+        }
+    </script>
+</body>
+
+</html>
